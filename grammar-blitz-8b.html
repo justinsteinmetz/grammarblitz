@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grammar Blitz — 8b</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --accent: #e8ff47;
+    --accent2: #ff4d6d;
+    --accent3: #47c8ff;
+    --purple: #c47aff;
+    --text: #f0f0f0;
+    --muted: #555;
+    --correct: #52d98a;
+    --wrong: #ff4d6d;
+    --border: #2a2a32;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Space Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+
+  .screen { display: none; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .screen.active { display: flex; }
+
+  /* ── HOME ── */
+  #home { background: radial-gradient(ellipse at 30% 20%, #1a1a2e 0%, var(--bg) 60%); text-align: center; gap: 24px; }
+
+  .logo { font-family: 'Syne', sans-serif; font-size: clamp(2.6rem, 8vw, 5rem); font-weight: 800; letter-spacing: -2px; line-height: 1; color: var(--accent); text-shadow: 0 0 40px rgba(232,255,71,0.25); }
+  .logo span { color: var(--text); }
+  .subtitle { font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-top: -8px; }
+
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 460px; }
+
+  .mode-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 12px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .mode-card:hover { transform: translateY(-2px); background: var(--surface2); }
+  .mode-icon { font-size: 2rem; margin-bottom: 8px; }
+  .mode-title { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; margin-bottom: 5px; }
+  .mode-desc { font-size: 0.65rem; color: var(--muted); line-height: 1.5; }
+
+  .mode-card.modal-card { border-color: rgba(71,200,255,0.25); }
+  .mode-card.modal-card:hover { border-color: var(--accent3); }
+  .mode-card.pp-card { border-color: rgba(232,255,71,0.25); }
+  .mode-card.pp-card:hover { border-color: var(--accent); }
+  .mode-card.write-card { border-color: rgba(196,122,255,0.25); }
+  .mode-card.write-card:hover { border-color: var(--purple); }
+  .mode-card.blitz-card { border-color: rgba(255,77,109,0.25); }
+  .mode-card.blitz-card:hover { border-color: var(--accent2); }
+
+  .lesson-arc { display: flex; align-items: center; gap: 6px; font-size: 0.62rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); flex-wrap: wrap; justify-content: center; max-width: 420px; }
+  .arc-step { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; white-space: nowrap; }
+  .arc-step span { color: var(--text); font-weight: 700; }
+  .arc-arrow { color: var(--border); }
+  .home-note { font-size: 0.65rem; color: var(--muted); max-width: 300px; text-align: center; line-height: 1.7; }
+
+  /* ── GAME ── */
+  #game { gap: 0; padding: 0; justify-content: flex-start; }
+
+  .game-header { width: 100%; background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .game-title { font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+  .hud { display: flex; gap: 14px; align-items: center; }
+  .score-display { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 800; color: var(--accent); }
+
+  .timer-ring { position: relative; width: 42px; height: 42px; flex-shrink: 0; }
+  .timer-ring svg { transform: rotate(-90deg); }
+  .timer-ring circle { fill: none; stroke-width: 3; }
+  .timer-bg { stroke: var(--border); }
+  .timer-fg { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+  .timer-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; }
+
+  .progress-bar-wrap { width: 100%; height: 3px; background: var(--border); flex-shrink: 0; }
+  .progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.4s; }
+
+  .game-body { flex: 1; width: 100%; max-width: 580px; margin: 0 auto; padding: 20px 18px 32px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+
+  .q-meta { display: flex; align-items: center; justify-content: space-between; }
+  .q-counter { font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+
+  .q-tag { font-size: 0.62rem; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  .q-tag.tag-modal { color: var(--accent3); border-color: rgba(71,200,255,0.3); }
+  .q-tag.tag-pp { color: var(--accent); border-color: rgba(232,255,71,0.3); }
+  .q-tag.tag-ps { color: #ff9f47; border-color: rgba(255,159,71,0.3); }
+  .q-tag.tag-sub { color: var(--purple); border-color: rgba(196,122,255,0.3); }
+  .q-tag.tag-blitz { color: var(--accent2); border-color: rgba(255,77,109,0.3); }
+
+  .sentence-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 18px; font-size: clamp(0.9rem, 2.3vw, 1.05rem); line-height: 1.9; min-height: 68px; }
+
+  .gap { display: inline-block; min-width: 100px; border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: 700; text-align: center; padding: 0 4px; transition: color 0.2s, border-color 0.2s; }
+  .gap.correct { color: var(--correct); border-color: var(--correct); }
+  .gap.wrong { color: var(--wrong); border-color: var(--wrong); }
+
+  .hint-text { font-size: 0.72rem; color: var(--muted); font-style: italic; padding-left: 2px; }
+
+  /* MC options */
+  .options-grid { display: grid; grid-template-columns: 1fr; gap: 9px; }
+  .options-grid.can-split { grid-template-columns: 1fr 1fr; }
+
+  .opt-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 13px 16px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.85rem; cursor: pointer; transition: all 0.15s; text-align: left; line-height: 1.4; word-break: break-word; }
+  .opt-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--surface2); padding-left: 20px; }
+  .opt-btn.correct-ans { border-color: var(--correct); background: rgba(82,217,138,0.08); color: var(--correct); }
+  .opt-btn.wrong-ans { border-color: var(--wrong); background: rgba(255,77,109,0.08); color: var(--wrong); }
+  .opt-btn:disabled { cursor: default; }
+
+  /* Write input */
+  .write-input { width: 100%; background: var(--surface); border: 2px solid var(--purple); border-radius: 10px; padding: 14px 16px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 1rem; outline: none; transition: border-color 0.2s, background 0.2s; }
+  .write-input:focus { border-color: #e0aaff; }
+  .write-input.correct-input { border-color: var(--correct); background: rgba(82,217,138,0.05); }
+  .write-input.wrong-input { border-color: var(--wrong); background: rgba(255,77,109,0.05); }
+  .write-input.close-input { border-color: #ffb347; background: rgba(255,179,71,0.05); }
+  .write-input:disabled { opacity: 0.7; cursor: default; }
+
+  .write-submit { background: var(--purple); color: #000; border: none; border-radius: 10px; padding: 13px; font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 800; cursor: pointer; width: 100%; letter-spacing: 1px; transition: all 0.15s; }
+  .write-submit:hover:not(:disabled) { background: #b060f0; color: #fff; }
+  .write-submit:disabled { opacity: 0.4; cursor: default; }
+
+  /* Explanation */
+  .explanation { background: var(--surface2); border-left: 3px solid var(--accent3); border-radius: 0 8px 8px 0; padding: 13px 15px; font-size: 0.76rem; color: #a0d8ef; line-height: 1.65; display: none; }
+  .explanation.show { display: block; }
+  .explanation strong { color: var(--text); }
+  .explanation .rule-line { margin-top: 6px; color: var(--muted); font-style: italic; }
+
+  /* No-explanation mode (blitz) */
+  .correct-reveal { background: rgba(82,217,138,0.08); border: 1px solid var(--correct); border-radius: 10px; padding: 12px 16px; font-size: 0.85rem; color: var(--correct); display: none; }
+  .correct-reveal.show { display: block; }
+
+  .next-btn { background: var(--accent); color: #000; border: none; border-radius: 10px; padding: 15px; font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 800; cursor: pointer; width: 100%; letter-spacing: 1px; transition: all 0.15s; display: none; }
+  .next-btn.show { display: block; }
+  .next-btn:hover { background: #d4e83a; transform: translateY(-1px); }
+
+  /* Feedback flash */
+  .feedback-flash { position: fixed; top: 76px; left: 50%; transform: translateX(-50%) translateY(-8px); background: var(--correct); color: #000; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; padding: 9px 26px; border-radius: 40px; opacity: 0; transition: opacity 0.18s, transform 0.18s; pointer-events: none; z-index: 100; white-space: nowrap; }
+  .feedback-flash.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .feedback-flash.wrong { background: var(--wrong); color: #fff; }
+  .feedback-flash.close { background: #ffb347; color: #000; }
+
+  .streak-badge { position: fixed; top: 76px; right: 16px; background: var(--accent2); color: #fff; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.8rem; padding: 6px 14px; border-radius: 20px; display: none; animation: popIn 0.25s; z-index: 99; }
+  @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+
+  .blitz-live { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--accent2); letter-spacing: 1px; text-transform: uppercase; }
+  .blitz-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); animation: pulse 0.9s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-5px); } 40%,80% { transform: translateX(5px); } }
+  .write-input.close-input { animation: shake 0.3s ease; }
+
+  /* ── RESULTS ── */
+  #results { text-align: center; gap: 22px; background: radial-gradient(ellipse at 60% 70%, #0d1f0d 0%, var(--bg) 60%); }
+
+  .results-heading { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 6vw, 3.2rem); font-weight: 800; letter-spacing: -1px; }
+  .score-block { line-height: 1; }
+  .big-score { font-family: 'Syne', sans-serif; font-size: clamp(3.5rem, 14vw, 7rem); font-weight: 800; color: var(--accent); }
+  .score-label { font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+
+  .result-stats { display: flex; gap: 20px; justify-content: center; }
+  .stat-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 18px; text-align: center; }
+  .stat-pill .sp-val { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; }
+  .stat-pill .sp-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 2px; }
+  .stat-pill.correct-pill .sp-val { color: var(--correct); }
+  .stat-pill.wrong-pill .sp-val { color: var(--wrong); }
+
+  .result-msg { font-size: 0.85rem; color: var(--muted); max-width: 320px; line-height: 1.7; }
+
+  .review-list { width: 100%; max-width: 500px; text-align: left; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; }
+  .review-item { background: var(--surface); border-radius: 8px; padding: 11px 13px; font-size: 0.75rem; border-left: 3px solid var(--muted); line-height: 1.6; }
+  .review-item.r-correct { border-left-color: var(--correct); }
+  .review-item.r-wrong { border-left-color: var(--wrong); }
+  .r-answer { color: var(--correct); font-weight: 700; }
+  .r-yours { color: var(--wrong); font-size: 0.7rem; }
+  .r-tag { color: var(--muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .btn-primary { background: var(--accent); color: #000; border: none; border-radius: 10px; padding: 13px 26px; font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 800; cursor: pointer; letter-spacing: 1px; transition: all 0.15s; }
+  .btn-primary:hover { background: #d4e83a; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 13px 26px; font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="screen active" id="home">
+  <div class="logo">GRAMMAR<span>BLITZ</span></div>
+  <div class="subtitle">8b · Test Prep</div>
+  <div class="mode-grid">
+    <div class="mode-card modal-card" onclick="startGame('modals')">
+      <div class="mode-icon">🎯</div>
+      <div class="mode-title" style="color:var(--accent3)">MODALS</div>
+      <div class="mode-desc">must · should · might<br>can't · needn't · may<br>+ past &amp; future subs</div>
+    </div>
+    <div class="mode-card pp-card" onclick="startGame('tenses')">
+      <div class="mode-icon">⚡</div>
+      <div class="mode-title" style="color:var(--accent)">TENSES</div>
+      <div class="mode-desc">Present perfect<br>vs Past simple<br>signal words &amp; form</div>
+    </div>
+    <div class="mode-card write-card" onclick="startGame('write')">
+      <div class="mode-icon">✍️</div>
+      <div class="mode-title" style="color:#c47aff">WRITE IT</div>
+      <div class="mode-desc">Type the answer<br>both grammar areas<br>real test format</div>
+    </div>
+    <div class="mode-card blitz-card" onclick="startGame('blitz')">
+      <div class="mode-icon">🔥</div>
+      <div class="mode-title" style="color:var(--accent2)">BLITZ</div>
+      <div class="mode-desc">Mixed · timed · fast<br>no hints · 10 sec each<br>final challenge</div>
+    </div>
+  </div>
+  <div class="lesson-arc">
+    <div class="arc-step"><span>1</span> Modals / Tenses</div>
+    <div class="arc-arrow">→</div>
+    <div class="arc-step"><span>2</span> Write It</div>
+    <div class="arc-arrow">→</div>
+    <div class="arc-step"><span>3</span> Blitz</div>
+  </div>
+  <div class="home-note">+10 per correct · fresh shuffle every retry</div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="game">
+  <div class="game-header">
+    <div id="gameTitleWrap">
+      <div class="game-title" id="gameTitle">MODALS</div>
+    </div>
+    <div class="hud">
+      <div class="score-display">⚡ <span id="scoreVal">0</span></div>
+      <div class="timer-ring">
+        <svg width="42" height="42" viewBox="0 0 42 42">
+          <circle class="timer-bg" cx="21" cy="21" r="17"/>
+          <circle class="timer-fg" id="timerCircle" cx="21" cy="21" r="17" stroke-dasharray="107" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-text" id="timerText">15</div>
+      </div>
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+  </div>
+  <div class="game-body">
+    <div class="q-meta">
+      <div class="q-counter" id="qCounter">Q 1 / 10</div>
+      <div class="q-tag" id="qTag"></div>
+    </div>
+    <div class="sentence-box" id="sentenceBox"></div>
+    <div class="hint-text" id="hintText"></div>
+    <!-- MC options (hidden in write/blitz write mode) -->
+    <div class="options-grid" id="optionsGrid"></div>
+    <!-- Write input (hidden in MC mode) -->
+    <div id="writeArea" style="display:none; flex-direction:column; gap:10px;">
+      <input class="write-input" id="writeInput" type="text" placeholder="Type your answer here…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <button class="write-submit" id="writeSubmit" onclick="submitWrite()">CHECK →</button>
+    </div>
+    <!-- Correct answer reveal (blitz after timeout, write after wrong) -->
+    <div class="correct-reveal" id="correctReveal"></div>
+    <div class="explanation" id="explanation"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">NEXT →</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="results">
+  <div class="results-heading" id="resultsHeading">WELL DONE</div>
+  <div class="score-block">
+    <div class="big-score" id="finalScore">0</div>
+    <div class="score-label">POINTS</div>
+  </div>
+  <div class="result-stats">
+    <div class="stat-pill correct-pill"><div class="sp-val" id="correctCount">0</div><div class="sp-label">Correct</div></div>
+    <div class="stat-pill wrong-pill"><div class="sp-val" id="wrongCount">0</div><div class="sp-label">Wrong</div></div>
+  </div>
+  <div class="result-msg" id="resultMsg"></div>
+  <div class="review-list" id="reviewList"></div>
+  <div class="btn-row">
+    <button class="btn-primary" id="retryBtn">RETRY</button>
+    <button class="btn-ghost" onclick="goHome()">HOME</button>
+  </div>
+</div>
+
+<div class="feedback-flash" id="feedbackFlash">✓</div>
+<div class="streak-badge" id="streakBadge">🔥 3 IN A ROW!</div>
+
+<script>
+const modalQuestions = [
+  {
+    tag: 'Core modal',
+    sentence: "You ___ be late tomorrow or you'll miss the train!",
+    hint: "(strong warning — it is forbidden)",
+    options: ["mustn't", "needn't", "might", "should"],
+    answer: "mustn't",
+    explanation: "<strong>mustn't</strong> = prohibition / strong warning. You are NOT allowed to be late. <div class='rule-line'>mustn't ≠ needn't — mustn't is forbidden; needn't is just not necessary.</div>"
+  },
+  {
+    tag: 'Core modal',
+    sentence: "It's cold on Orkney, so I think you ___ take two warm jackets.",
+    hint: "(advice — it's a good idea)",
+    options: ["should", "must", "needn't", "can't"],
+    answer: "should",
+    explanation: "<strong>should</strong> = advice or recommendation. It's a good idea, not a rule."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ bring extra money — everything is already paid for.",
+    hint: "(no necessity — not required)",
+    options: ["needn't", "mustn't", "shouldn't", "can't"],
+    answer: "needn't",
+    explanation: "<strong>needn't</strong> = no necessity. Not required — but not forbidden either. <div class='rule-line'>You mustn't bring drugs (forbidden) vs You needn't bring cash (not necessary).</div>"
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ use your phone during the test.",
+    hint: "(not permitted)",
+    options: ["can't", "needn't", "might", "should"],
+    answer: "can't",
+    explanation: "<strong>can't</strong> = not permitted / not allowed in this context."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "The weather ___ be nice in August — it's hard to say.",
+    hint: "(possibility — uncertain)",
+    options: ["might", "must", "needn't", "can't"],
+    answer: "might",
+    explanation: "<strong>might</strong> = possibility (not certain). Could happen, but we don't know."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ remember to pack your passport — it's essential.",
+    hint: "(strong personal necessity)",
+    options: ["must", "should", "might", "needn't"],
+    answer: "must",
+    explanation: "<strong>must</strong> = strong obligation, often from the speaker's own judgement. <div class='rule-line'>must (internal feeling) vs have to (external rule)</div>"
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ forget your waterproofs — you'll really regret it.",
+    hint: "(negative advice)",
+    options: ["shouldn't", "mustn't", "can't", "needn't"],
+    answer: "shouldn't",
+    explanation: "<strong>shouldn't</strong> = negative advice. Not a rule — just a bad idea."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ use the lab equipment before 9 a.m., according to the schedule.",
+    hint: "(permission — formal)",
+    options: ["may", "might", "must", "needn't"],
+    answer: "may",
+    explanation: "<strong>may</strong> = formal permission. More formal than 'can'. Also used for possibility."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "I'm not sure, but she ___ still be at the library.",
+    hint: "(uncertain possibility — weak)",
+    options: ["might", "must", "can't", "should"],
+    answer: "might",
+    explanation: "<strong>might</strong> = weak possibility. Compare: <strong>must</strong> (almost certain) and <strong>can't</strong> (almost impossible)."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "He's studied for weeks — he ___ know the answers by now.",
+    hint: "(logical deduction — almost certain)",
+    options: ["must", "might", "can't", "should"],
+    answer: "must",
+    explanation: "<strong>must</strong> = logical deduction (almost certain positive conclusion). He studied a lot → it's almost certain he knows."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "She ___ be French — she doesn't speak a word of it.",
+    hint: "(logical deduction — almost impossible)",
+    options: ["can't", "mustn't", "mightn't", "needn't"],
+    answer: "can't",
+    explanation: "<strong>can't</strong> = negative deduction (almost impossible). The evidence contradicts it."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ register in advance — just turn up on the day.",
+    hint: "(not necessary — no obligation)",
+    options: ["needn't", "mustn't", "can't", "shouldn't"],
+    answer: "needn't",
+    explanation: "<strong>needn't</strong> = no obligation. Registration is not required. <div class='rule-line'>needn't + bare infinitive: You needn't bring anything.</div>"
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "Iona was still on Orkney, so she ___ help me with the preparations.",
+    hint: "(past of 'can' — she was unable to)",
+    options: ["wasn't able to", "isn't able to", "won't be able to", "couldn't have"],
+    answer: "wasn't able to",
+    explanation: "<strong>wasn't able to</strong> = past simple of 'be able to'. The modal substitute for 'can' in the past. <div class='rule-line'>couldn't is also possible, but this exercise practises the substitute forms.</div>"
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "But then I ___ find two other people who helped me.",
+    hint: "(past of 'can' — she managed to)",
+    options: ["was able to", "am able to", "will be able to", "could"],
+    answer: "was able to",
+    explanation: "<strong>was able to</strong> = succeeded in doing it on that specific occasion. <div class='rule-line'>was able to = managed it. could = had the general ability.</div>"
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "At the last event, everyone ___ pay an entry fee.",
+    hint: "(past — it was required then)",
+    options: ["had to", "has to", "will have to", "must"],
+    answer: "had to",
+    explanation: "<strong>had to</strong> = past simple of 'have to'. Obligation that existed at that time. <div class='rule-line'>must has no past form — had to is always used instead.</div>"
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "We ___ wear school uniform in primary school.",
+    hint: "(past obligation — a rule that existed then)",
+    options: ["had to", "must", "have to", "were able to"],
+    answer: "had to",
+    explanation: "<strong>had to</strong> = past obligation. The rule existed at that time."
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "She ___ speak German before she moved to Berlin.",
+    hint: "(past general ability — had the skill)",
+    options: ["could", "was able to", "had to", "might"],
+    answer: "could",
+    explanation: "<strong>could</strong> = general ability in the past (she had the skill). <div class='rule-line'>could = general past ability. was able to = succeeded on a specific occasion.</div>"
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "You ___ bring anything — we had more than enough food.",
+    hint: "(it wasn't necessary — past)",
+    options: ["didn't have to", "mustn't have", "couldn't", "hadn't to"],
+    answer: "didn't have to",
+    explanation: "<strong>didn't have to</strong> = past of 'don't have to' = it wasn't necessary. <div class='rule-line'>didn't have to = no obligation. mustn't have = it was wrong to do it. Very different!</div>"
+  },
+  {
+    tag: 'Future substitute',
+    sentence: "Next time, you ___ bring your own clothes to swap.",
+    hint: "(future necessity — a rule that will apply)",
+    options: ["will have to", "had to", "have to", "must"],
+    answer: "will have to",
+    explanation: "<strong>will have to</strong> = future of 'have to'. An obligation that will exist in the future. <div class='rule-line'>must has no future form — will have to is used instead.</div>"
+  },
+  {
+    tag: 'Future substitute',
+    sentence: "After the operation, she ___ rest for two weeks.",
+    hint: "(future — medical necessity)",
+    options: ["will have to", "had to", "must", "could"],
+    answer: "will have to",
+    explanation: "<strong>will have to</strong> = a future obligation. Natural for a scheduled future necessity."
+  },
+  {
+    tag: 'Future substitute',
+    sentence: "With more practice, you ___ play that piece perfectly.",
+    hint: "(future ability)",
+    options: ["will be able to", "were able to", "can", "must"],
+    answer: "will be able to",
+    explanation: "<strong>will be able to</strong> = future of 'can' / 'be able to'. A future capability."
+  },
+  {
+    tag: 'Future substitute',
+    sentence: "You ___ leave early tomorrow — the meeting is cancelled.",
+    hint: "(future — no obligation)",
+    options: ["won't have to", "will have to", "mustn't", "can't"],
+    answer: "won't have to",
+    explanation: "<strong>won't have to</strong> = future of 'don't have to'. No obligation in the future. <div class='rule-line'>won't have to = not necessary. mustn't = forbidden. Very different!</div>"
+  },
+];
+
+const tensesQuestions = [
+  {
+    tag: 'Present perfect',
+    sentence: "I ___ my homework, so I can go out now.",
+    hint: "(result relevant right now — already)",
+    options: ["have already finished", "already finished", "had finished", "finish"],
+    answer: "have already finished",
+    explanation: "<strong>Present perfect</strong> — the action is complete and the result matters NOW. <div class='rule-line'>Signal word: <em>already</em> (positive sentences, before the past participle)</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "She ___ in Prague for twenty years.",
+    hint: "(started in the past, still true now — for)",
+    options: ["has lived", "lived", "was living", "is living"],
+    answer: "has lived",
+    explanation: "<strong>Present perfect</strong> with <em>for</em> — started in the past, continues into the present. <div class='rule-line'>for + duration: for twenty years / for a long time</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "Have you ever ___ Orkney?",
+    hint: "(life experience — ever)",
+    options: ["visited", "visit", "visiting", "have visited"],
+    answer: "visited",
+    explanation: "<strong>Present perfect</strong> with <em>ever</em> — asking about life experience at any point up to now. <div class='rule-line'>ever goes between have/has and the past participle</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "I ___ that film yet.",
+    hint: "(expected but not done — yet, negative)",
+    options: ["haven't seen", "didn't see", "don't see", "wasn't seeing"],
+    answer: "haven't seen",
+    explanation: "<strong>Present perfect</strong> with <em>yet</em> — something expected but not done up to now. <div class='rule-line'>yet → end of sentence, in negatives or questions</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "They ___ at the station.",
+    hint: "(just happened — very recent)",
+    options: ["have just arrived", "just arrived", "are just arriving", "just arrive"],
+    answer: "have just arrived",
+    explanation: "<strong>Present perfect</strong> with <em>just</em> — a very recent action with present relevance. <div class='rule-line'>just goes between have/has and the past participle</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "I ___ to Scotland before this trip.",
+    hint: "(life experience — never)",
+    options: ["have never been", "never went", "had never been", "was never"],
+    answer: "have never been",
+    explanation: "<strong>Present perfect</strong> with <em>never</em> — a life experience (or lack of one) up to now. <div class='rule-line'>never goes between have/has and the past participle</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "How long has she ___ Adi?",
+    hint: "(duration from past to now — how long)",
+    options: ["known", "know", "knowing", "been knowing"],
+    answer: "known",
+    explanation: "<strong>Present perfect</strong> with <em>how long</em> — a state that began in the past and continues now. Full form: How long has she known Adi? <div class='rule-line'>how long + present perfect → asking about duration up to now</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "I ___ this episode three times already.",
+    hint: "(number of times up to now)",
+    options: ["have seen", "saw", "had seen", "see"],
+    answer: "have seen",
+    explanation: "<strong>Present perfect</strong> — counting experiences up to the present moment. <div class='rule-line'>already in this context = more times than expected</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "Have you found your keys ___?",
+    hint: "(asking if a recent action is complete — one word missing)",
+    options: ["yet", "already", "just", "never"],
+    answer: "yet",
+    explanation: "<strong>yet</strong> in a question = asking if something expected has happened up to now. <div class='rule-line'>yet → end of question or negative sentence</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "This is the best pizza I ___ in my life.",
+    hint: "(superlative + life experience — ever)",
+    options: ["have ever eaten", "ever ate", "ever eat", "had ever eaten"],
+    answer: "have ever eaten",
+    explanation: "<strong>Present perfect</strong> with <em>ever</em> after a superlative. <div class='rule-line'>the best/worst/most... + I have ever + past participle</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "We ___ to the clothes swap last Saturday.",
+    hint: "(specific time in the past — last Saturday)",
+    options: ["went", "have gone", "have been", "go"],
+    answer: "went",
+    explanation: "<strong>Past simple</strong> — 'last Saturday' is a specific, finished time. <div class='rule-line'>last week / yesterday / in 2019 / ago → past simple</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "She ___ for Aberdeen two hours ago.",
+    hint: "(specific finished time — ago)",
+    options: ["left", "has left", "was leaving", "leaves"],
+    answer: "left",
+    explanation: "<strong>Past simple</strong> — <em>ago</em> always goes with past simple. <div class='rule-line'>ago = a finished point in time → past simple</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "The event ___ a great success last weekend.",
+    hint: "(completed event — specific time)",
+    options: ["was", "has been", "is", "had been"],
+    answer: "was",
+    explanation: "<strong>Past simple</strong> — 'last weekend' is finished time. <div class='rule-line'>has been would need no time reference: 'It has been a great success' (= still is).</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "___ you enjoy the concert yesterday?",
+    hint: "(specific past event — yesterday)",
+    options: ["Did", "Have", "Do", "Were"],
+    answer: "Did",
+    explanation: "<strong>Past simple</strong> question. Yesterday = specific finished time. <div class='rule-line'>did + subject + bare infinitive</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "I ___ Diya at the market in 2021.",
+    hint: "(specific year — first meeting)",
+    options: ["met", "have met", "meet", "was meeting"],
+    answer: "met",
+    explanation: "<strong>Past simple</strong> — 'in 2021' is a specific, finished year. <div class='rule-line'>in + year → past simple</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "When ___ you start learning English?",
+    hint: "(asking for a specific moment in the past — when)",
+    options: ["did", "have", "do", "were"],
+    answer: "did",
+    explanation: "<strong>Past simple</strong> — <em>when</em> asks for a specific time, which forces past simple. <div class='rule-line'>You cannot say 'When have you started...'. When + past simple.</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "She ___ three languages before she was eighteen.",
+    hint: "(completed achievement in a finished past period)",
+    options: ["learned", "has learned", "was learning", "had learned"],
+    answer: "learned",
+    explanation: "<strong>Past simple</strong> — 'before she was eighteen' sets a finished past context. <div class='rule-line'>A completed action in a finished past period → past simple.</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "She ___ in Vienna since 2018, so she speaks good German.",
+    hint: "(started then, still true now — since)",
+    options: ["has lived", "lived", "was living", "had lived"],
+    answer: "has lived",
+    explanation: "<strong>Present perfect</strong> with <em>since</em> — she moved in 2018 and still lives there. <div class='rule-line'>since + point in time (since 2018 / since Monday)</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "___ you ___ the new café in Žižkov?",
+    hint: "(have you experienced it yet? — no time given)",
+    options: ["Have / tried", "Did / try", "Do / try", "Are / trying"],
+    answer: "Have / tried",
+    explanation: "<strong>Present perfect</strong> — asking about experience up to now, no specific time given. <div class='rule-line'>Add a time: 'Did you try it last week?' → past simple.</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "I ___ three coffees this morning.",
+    hint: "(this morning is not over yet)",
+    options: ["have had", "had", "was having", "have"],
+    answer: "have had",
+    explanation: "<strong>Present perfect</strong> — 'this morning' is an unfinished time period (morning is still happening). <div class='rule-line'>Unfinished time (this week / today / this year) → present perfect.</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "I ___ three coffees yesterday morning.",
+    hint: "(yesterday morning is a finished time)",
+    options: ["had", "have had", "was having", "have"],
+    answer: "had",
+    explanation: "<strong>Past simple</strong> — 'yesterday morning' is a finished time period. <div class='rule-line'>Compare: 'I've had three coffees this morning' (still morning) vs 'I had three coffees yesterday morning' (finished).</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "She looks exhausted — she ___ for hours.",
+    hint: "(result visible now — ongoing effort)",
+    options: ["has been working", "was working", "worked", "had worked"],
+    answer: "has been working",
+    explanation: "<strong>Present perfect continuous</strong> — ongoing up to now, result (exhaustion) is visible. <div class='rule-line'>has/have been + -ing = present perfect continuous (duration + present result)</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "I ___ just ___ the door when the phone rang.",
+    hint: "(one past action happened just before another past action)",
+    options: ["had / closed", "have / closed", "was / closing", "did / close"],
+    answer: "had / closed",
+    explanation: "<strong>Past perfect</strong> — the door closing happened just before the phone rang (both are past events). <div class='rule-line'>Past perfect = had + past participle (the earlier of two past actions)</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "I ___ Diya before, but I'd forgotten her name.",
+    hint: "(a past experience — before another past event)",
+    options: ["had met", "have met", "met", "was meeting"],
+    answer: "had met",
+    explanation: "<strong>Past perfect</strong> — meeting her happened before the forgetting. Both are in the past. <div class='rule-line'>Past perfect = going even further back in time from another past event.</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "By the time Adi called, Diya ___ already ___ all the preparations.",
+    hint: "(completed before a specific past moment)",
+    options: ["had / finished", "has / finished", "was / finishing", "did / finish"],
+    answer: "had / finished",
+    explanation: "<strong>Past perfect</strong> — the preparations were done before Adi's call (earlier past action). <div class='rule-line'>By the time + past simple → past perfect for the earlier action.</div>"
+  },
+];
+
+// ══════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════
+const TOTAL_Q = 10;
+const TIMER_MC = 15;
+const TIMER_WRITE = 25;
+const TIMER_BLITZ = 10;
+
+const TAG_CLASS = {
+  'Core modal': 'tag-modal',
+  'Past substitute': 'tag-sub',
+  'Future substitute': 'tag-sub',
+  'Present perfect': 'tag-pp',
+  'Past simple': 'tag-ps',
+  'PP or PS?': 'tag-pp',
+};
+
+const MODE_CONFIG = {
+  modals:  { label: 'MODALS',   bank: () => modalQuestions,  type: 'mc',    time: TIMER_MC    },
+  tenses:  { label: 'TENSES',   bank: () => tensesQuestions, type: 'mc',    time: TIMER_MC    },
+  write:   { label: 'WRITE IT', bank: () => [...modalQuestions, ...tensesQuestions], type: 'write', time: TIMER_WRITE },
+  blitz:   { label: '🔥 BLITZ', bank: () => [...modalQuestions, ...tensesQuestions], type: 'blitz', time: TIMER_BLITZ },
+};
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let currentMode = '';
+let currentType = 'mc';
+let questions = [];
+let qIndex = 0;
+let score = 0;
+let streak = 0;
+let timerInterval = null;
+let timeLeft = 15;
+let maxTime = 15;
+let answered = false;
+let results = [];
+
+// ══════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function canSplitOptions(opts) {
+  return opts.every(o => o.length <= 20);
+}
+
+function normalise(s) {
+  return s.trim().toLowerCase().replace(/['']/g, "'").replace(/\s+/g, ' ');
+}
+
+// Levenshtein distance
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, (_, i) => Array.from({length: n+1}, (_, j) => i === 0 ? j : j === 0 ? i : 0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]);
+  return dp[m][n];
+}
+
+// Returns 'correct' | 'close' | 'wrong'
+function checkAnswer(typed, answer) {
+  const t = normalise(typed);
+  const a = normalise(answer);
+  if (t === a) return 'correct';
+  // Allow up to 2 edits for answers up to 10 chars, 3 for longer
+  const threshold = a.length <= 10 ? 2 : 3;
+  if (levenshtein(t, a) <= threshold) return 'close';
+  return 'wrong';
+}
+
+// ══════════════════════════════════════════════════════════
+// GAME START
+// ══════════════════════════════════════════════════════════
+function startGame(mode) {
+  currentMode = mode;
+  const cfg = MODE_CONFIG[mode];
+  currentType = cfg.type;
+  maxTime = cfg.time;
+  questions = shuffle(cfg.bank()).slice(0, TOTAL_Q);
+  qIndex = 0; score = 0; streak = 0; results = [];
+
+  document.getElementById('gameTitle').textContent = cfg.label;
+
+  // Blitz live indicator
+  const wrap = document.getElementById('gameTitleWrap');
+  wrap.innerHTML = '';
+  if (mode === 'blitz') {
+    wrap.innerHTML = `<div class="blitz-live"><span class="blitz-dot"></span>${cfg.label}</div>`;
+  } else {
+    const d = document.createElement('div');
+    d.className = 'game-title';
+    d.id = 'gameTitle';
+    d.textContent = cfg.label;
+    wrap.appendChild(d);
+  }
+
+  showScreen('game');
+  renderQuestion();
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════
+function renderQuestion() {
+  answered = false;
+  const q = questions[qIndex];
+
+  document.getElementById('qCounter').textContent = `Q ${qIndex + 1} / ${TOTAL_Q}`;
+  document.getElementById('progressBar').style.width = `${(qIndex / TOTAL_Q) * 100}%`;
+  document.getElementById('scoreVal').textContent = score;
+
+  // Tag
+  const tagEl = document.getElementById('qTag');
+  if (currentType === 'blitz') {
+    tagEl.textContent = ''; tagEl.className = 'q-tag';
+  } else {
+    tagEl.textContent = q.tag;
+    tagEl.className = 'q-tag ' + (TAG_CLASS[q.tag] || '');
+  }
+
+  // Sentence
+  const sentHtml = q.sentence.replace('___', '<span class="gap" id="gapSpan">___</span>');
+  document.getElementById('sentenceBox').innerHTML = sentHtml;
+
+  // Hint — hide in blitz
+  document.getElementById('hintText').textContent = currentType === 'blitz' ? '' : (q.hint || '');
+
+  // Reset panels
+  document.getElementById('explanation').className = 'explanation';
+  document.getElementById('correctReveal').className = 'correct-reveal';
+  document.getElementById('nextBtn').className = 'next-btn';
+
+  if (currentType === 'mc' || currentType === 'blitz') {
+    // MC mode
+    document.getElementById('optionsGrid').style.display = '';
+    document.getElementById('writeArea').style.display = 'none';
+
+    const grid = document.getElementById('optionsGrid');
+    grid.innerHTML = '';
+    const shuffled = shuffle(q.options);
+    const useTwo = canSplitOptions(shuffled) && shuffled.length === 4;
+    grid.className = 'options-grid' + (useTwo ? ' can-split' : '');
+    shuffled.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.textContent = opt;
+      btn.onclick = () => selectMC(opt, btn, q);
+      grid.appendChild(btn);
+    });
+
+  } else {
+    // Write mode
+    document.getElementById('optionsGrid').style.display = 'none';
+    document.getElementById('writeArea').style.display = 'flex';
+    const inp = document.getElementById('writeInput');
+    inp.value = '';
+    inp.className = 'write-input';
+    inp.disabled = false;
+    const sub = document.getElementById('writeSubmit');
+    sub.disabled = false;
+    sub.textContent = 'CHECK →';
+    setTimeout(() => inp.focus(), 100);
+
+    // Enter key
+    inp.onkeydown = (e) => { if (e.key === 'Enter') submitWrite(); };
+  }
+
+  startTimer();
+}
+
+// ══════════════════════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════════════════════
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = maxTime;
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerUI();
+    if (timeLeft <= 0) { clearInterval(timerInterval); if (!answered) timeUp(); }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const circle = document.getElementById('timerCircle');
+  const circumference = 107;
+  circle.style.strokeDashoffset = circumference * (1 - timeLeft / maxTime);
+  document.getElementById('timerText').textContent = timeLeft;
+  const r = timeLeft / maxTime;
+  circle.style.stroke = r > 0.5 ? 'var(--accent)' : r > 0.25 ? '#ffb347' : 'var(--wrong)';
+}
+
+function timeUp() {
+  answered = true; streak = 0;
+  const q = questions[qIndex];
+  results.push({ q, chosen: '(no answer)', correct: false });
+
+  if (currentType === 'mc' || currentType === 'blitz') {
+    document.querySelectorAll('.opt-btn').forEach(btn => {
+      btn.disabled = true;
+      if (btn.textContent === q.answer) btn.classList.add('correct-ans');
+    });
+  } else {
+    document.getElementById('writeInput').disabled = true;
+    document.getElementById('writeSubmit').disabled = true;
+  }
+
+  fillGap(q.answer, false);
+  showReveal(q);
+  if (currentType !== 'blitz') showExplanation(q);
+  showFlash('⏱ TIME!', true);
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+// ══════════════════════════════════════════════════════════
+// ANSWER — MC
+// ══════════════════════════════════════════════════════════
+function selectMC(chosen, btn, q) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+
+  const isCorrect = chosen === q.answer;
+  score += isCorrect ? 10 : 0;
+  streak = isCorrect ? streak + 1 : 0;
+  results.push({ q, chosen, correct: isCorrect });
+
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === q.answer) b.classList.add('correct-ans');
+    else if (b === btn && !isCorrect) b.classList.add('wrong-ans');
+  });
+
+  fillGap(q.answer, isCorrect);
+  document.getElementById('scoreVal').textContent = score;
+  showFlash(isCorrect ? '✓ CORRECT' : '✗ WRONG', !isCorrect);
+  if (streak >= 3) showStreak(streak);
+
+  if (currentType === 'blitz') {
+    if (!isCorrect) showReveal(q);
+  } else {
+    showExplanation(q);
+  }
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+// ══════════════════════════════════════════════════════════
+// ANSWER — WRITE
+// ══════════════════════════════════════════════════════════
+function submitWrite() {
+  if (answered) return;
+  const q = questions[qIndex];
+  const inp = document.getElementById('writeInput');
+  const typed = inp.value;
+  if (!typed.trim()) return;
+
+  const result = checkAnswer(typed, q.answer);
+  const isCorrect = result === 'correct';
+  const isClose = result === 'close';
+
+  if (isClose && !inp.dataset.closeShown) {
+    // First attempt — close but not right: give one more chance
+    inp.dataset.closeShown = '1';
+    inp.className = 'write-input close-input';
+    showFlash('ALMOST — CHECK SPELLING', false, true);
+    // Shake the input
+    inp.style.animation = 'none';
+    setTimeout(() => { inp.style.animation = ''; }, 10);
+    inp.select();
+    return; // don't lock in yet
+  }
+
+  // Final judgement (correct, or wrong, or second attempt after close)
+  answered = true;
+  clearInterval(timerInterval);
+
+  const finalCorrect = isCorrect || isClose; // close on second attempt = correct
+  score += finalCorrect ? 10 : 0;
+  streak = finalCorrect ? streak + 1 : 0;
+  results.push({ q, chosen: typed, correct: finalCorrect });
+
+  inp.disabled = true;
+  inp.className = 'write-input ' + (finalCorrect ? 'correct-input' : 'wrong-input');
+  document.getElementById('writeSubmit').disabled = true;
+  delete inp.dataset.closeShown;
+
+  fillGap(q.answer, finalCorrect);
+  document.getElementById('scoreVal').textContent = score;
+  showFlash(finalCorrect ? '✓ CORRECT' : '✗ WRONG', !finalCorrect);
+  if (streak >= 3) showStreak(streak);
+  if (!finalCorrect) showReveal(q);
+  showExplanation(q);
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+function fillGap(answer, correct) {
+  const gap = document.getElementById('gapSpan');
+  if (gap) { gap.textContent = answer; gap.className = 'gap ' + (correct ? 'correct' : 'wrong'); }
+}
+
+function showReveal(q) {
+  const el = document.getElementById('correctReveal');
+  el.textContent = `✓ Answer: ${q.answer}`;
+  el.className = 'correct-reveal show';
+}
+
+function showExplanation(q) {
+  const el = document.getElementById('explanation');
+  el.innerHTML = q.explanation;
+  el.className = 'explanation show';
+}
+
+function showFlash(msg, wrong, close) {
+  const el = document.getElementById('feedbackFlash');
+  el.textContent = msg;
+  const cls = close ? ' close' : wrong ? ' wrong' : '';
+  el.className = 'feedback-flash' + cls + ' show';
+  setTimeout(() => { el.className = 'feedback-flash' + cls; }, close ? 1600 : 1100);
+}
+
+function showStreak(n) {
+  const el = document.getElementById('streakBadge');
+  el.textContent = `🔥 ${n} IN A ROW!`;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 1800);
+}
+
+function nextQuestion() {
+  qIndex++;
+  if (qIndex >= TOTAL_Q) showResults();
+  else renderQuestion();
+}
+
+// ══════════════════════════════════════════════════════════
+// RESULTS
+// ══════════════════════════════════════════════════════════
+function showResults() {
+  clearInterval(timerInterval);
+  const correct = results.filter(r => r.correct).length;
+  const pct = Math.round((correct / TOTAL_Q) * 100);
+
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('correctCount').textContent = correct;
+  document.getElementById('wrongCount').textContent = TOTAL_Q - correct;
+  document.getElementById('resultsHeading').textContent =
+    pct >= 90 ? 'TEST READY!' : pct >= 70 ? 'GOOD WORK' : pct >= 50 ? 'KEEP GOING' : 'REVISE MORE';
+  document.getElementById('resultMsg').textContent =
+    pct >= 70 ? `${correct}/${TOTAL_Q} — solid.`
+    : pct >= 50 ? `${correct}/${TOTAL_Q} — check the review and retry.`
+    : `${correct}/${TOTAL_Q} — focus on the patterns. Retry!`;
+
+  document.getElementById('retryBtn').onclick = retryGame;
+
+  const list = document.getElementById('reviewList');
+  list.innerHTML = '';
+  results.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'review-item ' + (r.correct ? 'r-correct' : 'r-wrong');
+    const filled = r.q.sentence.replace('___', `<span class="r-answer">${r.q.answer}</span>`);
+    div.innerHTML = `<span class="r-tag">${r.q.tag}</span><br>${filled}` +
+      (!r.correct ? `<br><span class="r-yours">You wrote: ${r.chosen}</span>` : '');
+    list.appendChild(div);
+  });
+
+  showScreen('results');
+}
+
+function retryGame() { startGame(currentMode); }
+function goHome() { clearInterval(timerInterval); showScreen('home'); }
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
