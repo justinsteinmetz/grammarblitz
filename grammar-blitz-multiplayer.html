@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grammar Blitz — 8b</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --accent: #e8ff47;
+    --accent2: #ff4d6d;
+    --accent3: #47c8ff;
+    --purple: #c47aff;
+    --text: #f0f0f0;
+    --muted: #555;
+    --correct: #52d98a;
+    --wrong: #ff4d6d;
+    --border: #2a2a32;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Space Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+
+  .screen { display: none; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .screen.active { display: flex; }
+
+  /* ── LOBBY ── */
+  #lobby { background: radial-gradient(ellipse at 30% 20%, #1a1a2e 0%, var(--bg) 60%); text-align: center; gap: 22px; }
+
+  .logo { font-family: 'Syne', sans-serif; font-size: clamp(2.4rem, 7vw, 4.5rem); font-weight: 800; letter-spacing: -2px; line-height: 1; color: var(--accent); text-shadow: 0 0 40px rgba(232,255,71,0.25); }
+  .logo span { color: var(--text); }
+  .subtitle { font-size: 0.72rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-top: -6px; }
+
+  .lobby-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px 20px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 14px; }
+  .lobby-label { font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+
+  .name-input { width: 100%; background: var(--surface2); border: 2px solid var(--border); border-radius: 10px; padding: 13px 16px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+  .name-input:focus { border-color: var(--accent); }
+
+  .mode-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mode-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: 'Space Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.15s; color: var(--muted); }
+  .mode-pill:hover { border-color: var(--accent); color: var(--text); }
+  .mode-pill.selected { border-color: var(--accent); color: var(--accent); background: rgba(232,255,71,0.07); }
+
+  .divider { border: none; border-top: 1px solid var(--border); }
+
+  .join-row { display: flex; gap: 8px; }
+  .code-input { flex: 1; background: var(--surface2); border: 2px solid var(--border); border-radius: 10px; padding: 13px 14px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; outline: none; text-align: center; transition: border-color 0.2s; }
+  .code-input:focus { border-color: var(--accent3); }
+
+  .btn { border: none; border-radius: 10px; padding: 13px 20px; font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 800; cursor: pointer; letter-spacing: 1px; transition: all 0.15s; }
+  .btn-accent { background: var(--accent); color: #000; }
+  .btn-accent:hover { background: #d4e83a; }
+  .btn-accent:disabled { opacity: 0.4; cursor: default; }
+  .btn-blue { background: var(--accent3); color: #000; }
+  .btn-blue:hover { background: #35b8ef; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+  .btn-full { width: 100%; }
+  .btn-red { background: var(--accent2); color: #fff; }
+  .btn-red:hover { background: #e03055; }
+
+  .lobby-error { font-size: 0.75rem; color: var(--wrong); text-align: center; min-height: 1em; }
+
+  /* ── WAITING ROOM ── */
+  #waiting { text-align: center; gap: 24px; }
+
+  .room-code-display { font-family: 'Syne', sans-serif; font-size: clamp(3rem, 12vw, 6rem); font-weight: 800; letter-spacing: 8px; color: var(--accent); line-height: 1; }
+  .room-code-label { font-size: 0.68rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+
+  .player-list { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 8px; }
+  .player-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 0.88rem; }
+  .player-chip .p-name { font-weight: 700; }
+  .player-chip .p-badge { font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .player-chip.is-host .p-badge { color: var(--accent); }
+  .player-chip.is-me { border-color: var(--accent3); }
+
+  .waiting-note { font-size: 0.72rem; color: var(--muted); }
+
+  /* ── COUNTDOWN ── */
+  #countdown { text-align: center; gap: 16px; }
+  .countdown-num { font-family: 'Syne', sans-serif; font-size: clamp(6rem, 25vw, 14rem); font-weight: 800; color: var(--accent); line-height: 1; animation: countPop 1s ease-out; }
+  @keyframes countPop { 0% { transform: scale(1.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  .countdown-label { font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+
+  /* ── GAME ── */
+  #game { gap: 0; padding: 0; justify-content: flex-start; }
+
+  .game-header { width: 100%; background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .game-title { font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+  .hud { display: flex; gap: 12px; align-items: center; }
+  .score-display { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--accent); }
+
+  .timer-ring { position: relative; width: 40px; height: 40px; flex-shrink: 0; }
+  .timer-ring svg { transform: rotate(-90deg); }
+  .timer-ring circle { fill: none; stroke-width: 3; }
+  .timer-bg { stroke: var(--border); }
+  .timer-fg { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+  .timer-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+
+  .progress-bar-wrap { width: 100%; height: 3px; background: var(--border); flex-shrink: 0; }
+  .progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.4s; }
+
+  .game-body { flex: 1; width: 100%; max-width: 580px; margin: 0 auto; padding: 18px 16px 28px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+
+  .q-meta { display: flex; align-items: center; justify-content: space-between; }
+  .q-counter { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+  .q-tag { font-size: 0.62rem; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  .q-tag.tag-modal { color: var(--accent3); border-color: rgba(71,200,255,0.3); }
+  .q-tag.tag-pp { color: var(--accent); border-color: rgba(232,255,71,0.3); }
+  .q-tag.tag-ps { color: #ff9f47; border-color: rgba(255,159,71,0.3); }
+  .q-tag.tag-sub { color: var(--purple); border-color: rgba(196,122,255,0.3); }
+
+  .sentence-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 16px; font-size: clamp(0.88rem, 2.2vw, 1rem); line-height: 1.9; min-height: 65px; }
+  .gap { display: inline-block; min-width: 90px; border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: 700; text-align: center; padding: 0 4px; transition: color 0.2s, border-color 0.2s; }
+  .gap.correct { color: var(--correct); border-color: var(--correct); }
+  .gap.wrong { color: var(--wrong); border-color: var(--wrong); }
+
+  .hint-text { font-size: 0.7rem; color: var(--muted); font-style: italic; padding-left: 2px; }
+
+  .options-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .options-grid.can-split { grid-template-columns: 1fr 1fr; }
+  .opt-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.82rem; cursor: pointer; transition: all 0.15s; text-align: left; line-height: 1.4; word-break: break-word; }
+  .opt-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--surface2); padding-left: 18px; }
+  .opt-btn.correct-ans { border-color: var(--correct); background: rgba(82,217,138,0.08); color: var(--correct); }
+  .opt-btn.wrong-ans { border-color: var(--wrong); background: rgba(255,77,109,0.08); color: var(--wrong); }
+  .opt-btn:disabled { cursor: default; }
+
+  .explanation { background: var(--surface2); border-left: 3px solid var(--accent3); border-radius: 0 8px 8px 0; padding: 12px 14px; font-size: 0.74rem; color: #a0d8ef; line-height: 1.6; display: none; }
+  .explanation.show { display: block; }
+  .explanation strong { color: var(--text); }
+  .explanation .rule-line { margin-top: 5px; color: var(--muted); font-style: italic; }
+
+  .next-btn { background: var(--accent); color: #000; border: none; border-radius: 10px; padding: 14px; font-family: 'Syne', sans-serif; font-size: 0.92rem; font-weight: 800; cursor: pointer; width: 100%; letter-spacing: 1px; transition: all 0.15s; display: none; }
+  .next-btn.show { display: block; }
+  .next-btn:hover { background: #d4e83a; }
+
+  /* Live leaderboard sidebar */
+  .live-board { width: 100%; max-width: 580px; margin: 0 auto; padding: 0 16px 8px; display: flex; gap: 6px; overflow-x: auto; flex-shrink: 0; }
+  .live-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; font-size: 0.68rem; white-space: nowrap; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .live-chip .lc-name { color: var(--muted); }
+  .live-chip .lc-score { font-family: 'Syne', sans-serif; font-weight: 800; color: var(--accent); }
+  .live-chip.lc-me { border-color: var(--accent3); }
+  .live-chip.lc-answered { border-color: var(--correct); }
+  .live-chip.lc-answered .lc-name { color: var(--correct); }
+
+  /* Feedback flash */
+  .feedback-flash { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-8px); background: var(--correct); color: #000; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.95rem; padding: 8px 24px; border-radius: 40px; opacity: 0; transition: opacity 0.18s, transform 0.18s; pointer-events: none; z-index: 100; white-space: nowrap; }
+  .feedback-flash.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .feedback-flash.wrong { background: var(--wrong); color: #fff; }
+
+  .streak-badge { position: fixed; top: 68px; right: 14px; background: var(--accent2); color: #fff; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.75rem; padding: 5px 12px; border-radius: 20px; display: none; animation: popIn 0.25s; z-index: 99; }
+  @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+
+  /* ── PODIUM ── */
+  #podium { text-align: center; gap: 20px; background: radial-gradient(ellipse at 50% 80%, #1a2e1a 0%, var(--bg) 60%); }
+
+  .podium-title { font-family: 'Syne', sans-serif; font-size: clamp(1.8rem, 6vw, 3rem); font-weight: 800; letter-spacing: -1px; }
+
+  .podium-wrap { display: flex; align-items: flex-end; justify-content: center; gap: 10px; width: 100%; max-width: 380px; }
+  .podium-block { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+  .podium-name { font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700; text-align: center; word-break: break-word; }
+  .podium-score { font-size: 0.65rem; color: var(--muted); }
+  .podium-bar { width: 100%; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; }
+  .podium-block:nth-child(1) .podium-bar { height: 90px; background: rgba(196,122,255,0.3); border: 1px solid var(--purple); color: var(--purple); }
+  .podium-block:nth-child(2) .podium-bar { height: 130px; background: rgba(232,255,71,0.15); border: 1px solid var(--accent); color: var(--accent); }
+  .podium-block:nth-child(3) .podium-bar { height: 70px; background: rgba(255,159,71,0.2); border: 1px solid #ff9f47; color: #ff9f47; }
+
+  .full-results { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+  .result-row { background: var(--surface); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; }
+  .result-row .rr-rank { color: var(--muted); width: 24px; }
+  .result-row .rr-name { flex: 1; font-weight: 700; }
+  .result-row .rr-score { font-family: 'Syne', sans-serif; font-weight: 800; color: var(--accent); }
+  .result-row.rr-me { border: 1px solid var(--accent3); }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+</style>
+</head>
+<body>
+
+<!-- LOBBY -->
+<div class="screen active" id="lobby">
+  <div class="logo">GRAMMAR<span>BLITZ</span></div>
+  <div class="subtitle">8b · Multiplayer</div>
+
+  <div class="lobby-card">
+    <div class="lobby-label">Your name</div>
+    <input class="name-input" id="nameInput" type="text" placeholder="Enter your name…" maxlength="16" autocomplete="off"/>
+
+    <div class="lobby-label">Mode</div>
+    <div class="mode-pills">
+      <div class="mode-pill selected" data-mode="modals" onclick="selectMode(this)">🎯 Modals</div>
+      <div class="mode-pill" data-mode="tenses" onclick="selectMode(this)">⚡ Tenses</div>
+      <div class="mode-pill" data-mode="mixed" onclick="selectMode(this)">🔥 Mixed</div>
+    </div>
+
+    <button class="btn btn-accent btn-full" onclick="createRoom()">CREATE ROOM</button>
+
+    <hr class="divider"/>
+
+    <div class="lobby-label">Join a room</div>
+    <div class="join-row">
+      <input class="code-input" id="joinCodeInput" type="text" placeholder="CODE" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters"/>
+      <button class="btn btn-blue" onclick="joinRoom()">JOIN</button>
+    </div>
+  </div>
+  <div class="lobby-error" id="lobbyError"></div>
+</div>
+
+<!-- WAITING ROOM -->
+<div class="screen" id="waiting">
+  <div class="room-code-label">Room code</div>
+  <div class="room-code-display" id="roomCodeDisplay">----</div>
+  <div class="player-list" id="playerList"></div>
+  <div class="waiting-note" id="waitingNote">Waiting for players…</div>
+  <div class="btn-row">
+    <button class="btn btn-accent" id="startBtn" style="display:none" onclick="hostStartGame()">START GAME →</button>
+    <button class="btn btn-ghost" onclick="leaveRoom()">LEAVE</button>
+  </div>
+</div>
+
+<!-- COUNTDOWN -->
+<div class="screen" id="countdown">
+  <div class="countdown-label">Get ready…</div>
+  <div class="countdown-num" id="countdownNum">3</div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="game">
+  <div class="game-header">
+    <div class="game-title" id="gameTitle">MODALS</div>
+    <div class="hud">
+      <div class="score-display">⚡ <span id="scoreVal">0</span></div>
+      <div class="timer-ring">
+        <svg width="40" height="40" viewBox="0 0 40 40">
+          <circle class="timer-bg" cx="20" cy="20" r="16"/>
+          <circle class="timer-fg" id="timerCircle" cx="20" cy="20" r="16" stroke-dasharray="100" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-text" id="timerText">15</div>
+      </div>
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+  </div>
+  <!-- Live player chips -->
+  <div class="live-board" id="liveBoard"></div>
+  <div class="game-body">
+    <div class="q-meta">
+      <div class="q-counter" id="qCounter">Q 1 / 10</div>
+      <div class="q-tag" id="qTag"></div>
+    </div>
+    <div class="sentence-box" id="sentenceBox"></div>
+    <div class="hint-text" id="hintText"></div>
+    <div class="options-grid" id="optionsGrid"></div>
+    <div class="explanation" id="explanation"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">NEXT →</button>
+  </div>
+</div>
+
+<!-- PODIUM -->
+<div class="screen" id="podium">
+  <div class="podium-title" id="podiumTitle">🏆 FINAL SCORES</div>
+  <div class="podium-wrap" id="podiumWrap"></div>
+  <div class="full-results" id="fullResults"></div>
+  <div class="btn-row">
+    <button class="btn btn-accent" onclick="playAgain()">PLAY AGAIN</button>
+    <button class="btn btn-ghost" onclick="goLobby()">HOME</button>
+  </div>
+</div>
+
+<div class="feedback-flash" id="feedbackFlash">✓</div>
+<div class="streak-badge" id="streakBadge">🔥 3 IN A ROW!</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, update, onValue, off, remove, push, serverTimestamp, onDisconnect }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ── FIREBASE CONFIG ──────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyA4xeVcHisW_-FB3zHeLxzZtFt9ChpQjEY",
+  authDomain: "grammarblitz-12d4d.firebaseapp.com",
+  databaseURL: "https://grammarblitz-12d4d-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "grammarblitz-12d4d",
+  storageBucket: "grammarblitz-12d4d.firebasestorage.app",
+  messagingSenderId: "197853726033",
+  appId: "1:197853726033:web:3ecc65d3b13dcc3cfe7f70"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ── QUESTION BANKS ───────────────────────────────────────
+const modalQuestions = [
+  {
+    tag: 'Core modal',
+    sentence: "You ___ be late tomorrow or you'll miss the train!",
+    hint: "(strong warning — it is forbidden)",
+    options: ["mustn't", "needn't", "might", "should"],
+    answer: "mustn't",
+    explanation: "<strong>mustn't</strong> = prohibition / strong warning. You are NOT allowed to be late. <div class='rule-line'>mustn't ≠ needn't — mustn't is forbidden; needn't is just not necessary.</div>"
+  },
+  {
+    tag: 'Core modal',
+    sentence: "It's cold on Orkney, so I think you ___ take two warm jackets.",
+    hint: "(advice — it's a good idea)",
+    options: ["should", "must", "needn't", "can't"],
+    answer: "should",
+    explanation: "<strong>should</strong> = advice or recommendation. It's a good idea, not a rule."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ bring extra money — everything is already paid for.",
+    hint: "(no necessity — not required)",
+    options: ["needn't", "mustn't", "shouldn't", "can't"],
+    answer: "needn't",
+    explanation: "<strong>needn't</strong> = no necessity. Not required — but not forbidden either. <div class='rule-line'>You mustn't bring drugs (forbidden) vs You needn't bring cash (not necessary).</div>"
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ use your phone during the test.",
+    hint: "(not permitted)",
+    options: ["can't", "needn't", "might", "should"],
+    answer: "can't",
+    explanation: "<strong>can't</strong> = not permitted / not allowed in this context."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "The weather ___ be nice in August — it's hard to say.",
+    hint: "(possibility — uncertain)",
+    options: ["might", "must", "needn't", "can't"],
+    answer: "might",
+    explanation: "<strong>might</strong> = possibility (not certain). Could happen, but we don't know."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ remember to pack your passport — it's essential.",
+    hint: "(strong personal necessity)",
+    options: ["must", "should", "might", "needn't"],
+    answer: "must",
+    explanation: "<strong>must</strong> = strong obligation, often from the speaker's own judgement. <div class='rule-line'>must (internal feeling) vs have to (external rule)</div>"
+  },
+  {
+    tag: 'Core modal',
+    sentence: "Waterproofs are essential on Orkney. You really ___ leave them at home.",
+    hint: "(negative advice)",
+    options: ["shouldn't", "mustn't", "can't", "needn't"],
+    answer: "shouldn't",
+    explanation: "<strong>shouldn't</strong> = negative advice. Not a rule — just a bad idea."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ use the lab equipment before 9 a.m., according to the schedule.",
+    hint: "(permission — formal)",
+    options: ["may", "might", "must", "needn't"],
+    answer: "may",
+    explanation: "<strong>may</strong> = formal permission. More formal than 'can'. Also used for possibility."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "I'm not sure, but she ___ still be at the library.",
+    hint: "(uncertain possibility — weak)",
+    options: ["might", "must", "can't", "should"],
+    answer: "might",
+    explanation: "<strong>might</strong> = weak possibility. Compare: <strong>must</strong> (almost certain) and <strong>can't</strong> (almost impossible)."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "He's studied for weeks — he ___ know the answers by now.",
+    hint: "(logical deduction — almost certain)",
+    options: ["must", "might", "can't", "should"],
+    answer: "must",
+    explanation: "<strong>must</strong> = logical deduction (almost certain positive conclusion). He studied a lot → it's almost certain he knows."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "She ___ be French — she doesn't speak a word of it.",
+    hint: "(logical deduction — almost impossible)",
+    options: ["can't", "mustn't", "mightn't", "needn't"],
+    answer: "can't",
+    explanation: "<strong>can't</strong> = negative deduction (almost impossible). The evidence contradicts it."
+  },
+  {
+    tag: 'Core modal',
+    sentence: "You ___ register in advance — just turn up on the day.",
+    hint: "(not necessary — no obligation)",
+    options: ["needn't", "mustn't", "can't", "shouldn't"],
+    answer: "needn't",
+    explanation: "<strong>needn't</strong> = no obligation. Registration is not required. <div class='rule-line'>needn't + bare infinitive: You needn't bring anything.</div>"
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "Iona was still on Orkney, so she ___ help me with the preparations.",
+    hint: "(past of 'can' — she was unable to)",
+    options: ["wasn't able to", "isn't able to", "won't be able to", "couldn't have"],
+    answer: "wasn't able to",
+    explanation: "<strong>wasn't able to</strong> = past simple of 'be able to'. The modal substitute for 'can' in the past. <div class='rule-line'>couldn't is also possible, but this exercise practises the substitute forms.</div>"
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "But then I ___ find two other people who helped me.",
+    hint: "(past of 'can' — she managed to)",
+    options: ["was able to", "am able to", "will be able to", "could"],
+    answer: "was able to",
+    explanation: "<strong>was able to</strong> = succeeded in doing it on that specific occasion. <div class='rule-line'>was able to = managed it. could = had the general ability.</div>"
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "At the last event, everyone ___ pay an entry fee.",
+    hint: "(past — it was required then)",
+    options: ["had to", "has to", "will have to", "must"],
+    answer: "had to",
+    explanation: "<strong>had to</strong> = past simple of 'have to'. Obligation that existed at that time. <div class='rule-line'>must has no past form — had to is always used instead.</div>"
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "We ___ wear school uniform in primary school.",
+    hint: "(past obligation — a rule that existed then)",
+    options: ["had to", "must", "have to", "were able to"],
+    answer: "had to",
+    explanation: "<strong>had to</strong> = past obligation. The rule existed at that time."
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "She ___ speak German before she moved to Berlin.",
+    hint: "(past general ability — had the skill)",
+    options: ["could", "was able to", "had to", "might"],
+    answer: "could",
+    explanation: "<strong>could</strong> = general ability in the past (she had the skill). <div class='rule-line'>could = general past ability. was able to = succeeded on a specific occasion.</div>"
+  },
+  {
+    tag: 'Past substitute',
+    sentence: "You ___ bring anything — we had more than enough food.",
+    hint: "(it wasn't necessary — past)",
+    options: ["didn't have to", "mustn't have", "couldn't", "hadn't to"],
+    answer: "didn't have to",
+    explanation: "<strong>didn't have to</strong> = past of 'don't have to' = it wasn't necessary. <div class='rule-line'>didn't have to = no obligation. mustn't have = it was wrong to do it. Very different!</div>"
+  },
+  {
+    tag: 'Future substitute',
+    sentence: "Next time, you ___ bring your own clothes to swap.",
+    hint: "(future necessity — a rule that will apply)",
+    options: ["will have to", "had to", "have to", "must"],
+    answer: "will have to",
+    explanation: "<strong>will have to</strong> = future of 'have to'. An obligation that will exist in the future. <div class='rule-line'>must has no future form — will have to is used instead.</div>"
+  },
+  {
+    tag: 'Future substitute',
+    sentence: "After the operation, she ___ rest for two weeks.",
+    hint: "(future — medical necessity)",
+    options: ["will have to", "had to", "must", "could"],
+    answer: "will have to",
+    explanation: "<strong>will have to</strong> = a future obligation. Natural for a scheduled future necessity."
+  },
+  {
+    tag: 'Future substitute',
+    sentence: "With more practice, you ___ play that piece perfectly.",
+    hint: "(future ability)",
+    options: ["will be able to", "were able to", "can", "must"],
+    answer: "will be able to",
+    explanation: "<strong>will be able to</strong> = future of 'can' / 'be able to'. A future capability."
+  },
+  {
+    tag: 'Future substitute',
+    sentence: "You ___ leave early tomorrow — the meeting is cancelled.",
+    hint: "(future — no obligation)",
+    options: ["won't have to", "will have to", "mustn't", "can't"],
+    answer: "won't have to",
+    explanation: "<strong>won't have to</strong> = future of 'don't have to'. No obligation in the future. <div class='rule-line'>won't have to = not necessary. mustn't = forbidden. Very different!</div>"
+  },
+];
+
+const tensesQuestions = [
+  {
+    tag: 'Present perfect',
+    sentence: "I ___ (already / finish) my homework, so I can go out now.",
+    hint: "(result relevant right now — already)",
+    options: ["have already finished", "already finished", "had finished", "finish"],
+    answer: "have already finished",
+    explanation: "<strong>Present perfect</strong> — the action is complete and the result matters NOW. <div class='rule-line'>Signal word: <em>already</em> (positive sentences, before the past participle)</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "She ___ (live) in Prague for twenty years.",
+    hint: "(started in the past, still true now — for)",
+    options: ["has lived", "lived", "was living", "is living"],
+    answer: "has lived",
+    explanation: "<strong>Present perfect</strong> with <em>for</em> — started in the past, continues into the present. <div class='rule-line'>for + duration: for twenty years / for a long time</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "Have you ever ___ Orkney?",
+    hint: "(life experience — ever)",
+    options: ["visited", "been to", "visit", "visiting"],
+    answer: ["visited", "been to"],
+    explanation: "<strong>Present perfect</strong> with <em>ever</em> — asking about life experience at any point up to now. <div class='rule-line'>ever goes between have/has and the past participle</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "I ___ (not / see) that film yet.",
+    hint: "(expected but not done — yet, negative)",
+    options: ["haven't seen", "didn't see", "don't see", "wasn't seeing"],
+    answer: "haven't seen",
+    explanation: "<strong>Present perfect</strong> with <em>yet</em> — something expected but not done up to now. <div class='rule-line'>yet → end of sentence, in negatives or questions</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "They ___ (just / arrive) at the station.",
+    hint: "(just happened — very recent)",
+    options: ["have just arrived", "just arrived", "are just arriving", "just arrive"],
+    answer: "have just arrived",
+    explanation: "<strong>Present perfect</strong> with <em>just</em> — a very recent action with present relevance. <div class='rule-line'>just goes between have/has and the past participle</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "I ___ (never / be) to Scotland before this trip.",
+    hint: "(life experience — never)",
+    options: ["have never been", "never went", "had never been", "was never"],
+    answer: "have never been",
+    explanation: "<strong>Present perfect</strong> with <em>never</em> — a life experience (or lack of one) up to now. <div class='rule-line'>never goes between have/has and the past participle</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "How long has she ___ (know) Adi?",
+    hint: "(duration from past to now — how long)",
+    options: ["known", "know", "knowing", "been knowing"],
+    answer: "known",
+    explanation: "<strong>Present perfect</strong> with <em>how long</em> — a state that began in the past and continues now. Full form: How long has she known Adi? <div class='rule-line'>how long + present perfect → asking about duration up to now</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "I ___ (see) this episode three times already.",
+    hint: "(number of times up to now)",
+    options: ["have seen", "saw", "had seen", "see"],
+    answer: "have seen",
+    explanation: "<strong>Present perfect</strong> — counting experiences up to the present moment. <div class='rule-line'>already in this context = more times than expected</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "Have you found your keys ___?",
+    hint: "(asking if a recent action is complete — one word missing)",
+    options: ["yet", "already", "just", "never"],
+    answer: "yet",
+    explanation: "<strong>yet</strong> in a question = asking if something expected has happened up to now. <div class='rule-line'>yet → end of question or negative sentence</div>"
+  },
+  {
+    tag: 'Present perfect',
+    sentence: "This is the best pizza I ___ (ever / eat) in my life.",
+    hint: "(superlative + life experience — ever)",
+    options: ["have ever eaten", "ever ate", "ever eat", "had ever eaten"],
+    answer: "have ever eaten",
+    explanation: "<strong>Present perfect</strong> with <em>ever</em> after a superlative. <div class='rule-line'>the best/worst/most... + I have ever + past participle</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "We ___ (go) to the clothes swap last Saturday.",
+    hint: "(specific time in the past — last Saturday)",
+    options: ["went", "have gone", "have been", "go"],
+    answer: "went",
+    explanation: "<strong>Past simple</strong> — 'last Saturday' is a specific, finished time. <div class='rule-line'>last week / yesterday / in 2019 / ago → past simple</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "She ___ (leave) for Aberdeen two hours ago.",
+    hint: "(specific finished time — ago)",
+    options: ["left", "has left", "was leaving", "leaves"],
+    answer: "left",
+    explanation: "<strong>Past simple</strong> — <em>ago</em> always goes with past simple. <div class='rule-line'>ago = a finished point in time → past simple</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "The event ___ (be) a great success last weekend.",
+    hint: "(completed event — specific time)",
+    options: ["was", "has been", "is", "had been"],
+    answer: "was",
+    explanation: "<strong>Past simple</strong> — 'last weekend' is finished time. <div class='rule-line'>has been would need no time reference: 'It has been a great success' (= still is).</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "___ you enjoy the concert yesterday?",
+    hint: "(specific past event — yesterday)",
+    options: ["Did", "Have", "Do", "Were"],
+    answer: "Did",
+    explanation: "<strong>Past simple</strong> question. Yesterday = specific finished time. <div class='rule-line'>did + subject + bare infinitive</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "I ___ (meet) Diya at the market in 2021.",
+    hint: "(specific year — first meeting)",
+    options: ["met", "have met", "meet", "was meeting"],
+    answer: "met",
+    explanation: "<strong>Past simple</strong> — 'in 2021' is a specific, finished year. <div class='rule-line'>in + year → past simple</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "When ___ you start learning English?",
+    hint: "(asking for a specific moment in the past — when)",
+    options: ["did", "have", "do", "were"],
+    answer: "did",
+    explanation: "<strong>Past simple</strong> — <em>when</em> asks for a specific time, which forces past simple. <div class='rule-line'>You cannot say 'When have you started...'. When + past simple.</div>"
+  },
+  {
+    tag: 'Past simple',
+    sentence: "She ___ (learn) three languages before she was eighteen.",
+    hint: "(completed achievement in a finished past period)",
+    options: ["learned", "has learned", "was learning", "had learned"],
+    answer: "learned",
+    explanation: "<strong>Past simple</strong> — 'before she was eighteen' sets a finished past context. <div class='rule-line'>A completed action in a finished past period → past simple.</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "She ___ (live) in Vienna since 2018, so she speaks good German.",
+    hint: "(started then, still true now — since)",
+    options: ["has lived", "lived", "was living", "had lived"],
+    answer: "has lived",
+    explanation: "<strong>Present perfect</strong> with <em>since</em> — she moved in 2018 and still lives there. <div class='rule-line'>since + point in time (since 2018 / since Monday)</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "___ you ___ the new café in Žižkov?",
+    hint: "(have you experienced it yet? — no time given)",
+    options: ["Have / tried", "Did / try", "Do / try", "Are / trying"],
+    answer: "Have / tried",
+    explanation: "<strong>Present perfect</strong> — asking about experience up to now, no specific time given. <div class='rule-line'>Add a time: 'Did you try it last week?' → past simple.</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "I ___ (have) three coffees this morning.",
+    hint: "(this morning is not over yet)",
+    options: ["have had", "had", "was having", "have"],
+    answer: "have had",
+    explanation: "<strong>Present perfect</strong> — 'this morning' is an unfinished time period (morning is still happening). <div class='rule-line'>Unfinished time (this week / today / this year) → present perfect.</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "I ___ (have) three coffees yesterday morning.",
+    hint: "(yesterday morning is a finished time)",
+    options: ["had", "have had", "was having", "have"],
+    answer: "had",
+    explanation: "<strong>Past simple</strong> — 'yesterday morning' is a finished time period. <div class='rule-line'>Compare: 'I've had three coffees this morning' (still morning) vs 'I had three coffees yesterday morning' (finished).</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "She looks exhausted — she ___ (work) for hours.",
+    hint: "(result visible now — ongoing effort)",
+    options: ["has been working", "was working", "worked", "had worked"],
+    answer: "has been working",
+    explanation: "<strong>Present perfect continuous</strong> — ongoing up to now, result (exhaustion) is visible. <div class='rule-line'>has/have been + -ing = present perfect continuous (duration + present result)</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "I ___ just ___ the door when the phone rang.",
+    hint: "(one past action happened just before another past action)",
+    options: ["had / closed", "have / closed", "was / closing", "did / close"],
+    answer: "had / closed",
+    explanation: "<strong>Past perfect</strong> — the door closing happened just before the phone rang (both are past events). <div class='rule-line'>Past perfect = had + past participle (the earlier of two past actions)</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "I ___ (meet) Diya before, but I'd forgotten her name.",
+    hint: "(a past experience — before another past event)",
+    options: ["had met", "have met", "met", "was meeting"],
+    answer: "had met",
+    explanation: "<strong>Past perfect</strong> — meeting her happened before the forgetting. Both are in the past. <div class='rule-line'>Past perfect = going even further back in time from another past event.</div>"
+  },
+  {
+    tag: 'PP or PS?',
+    sentence: "By the time Adi called, Diya ___ already ___ all the preparations.",
+    hint: "(completed before a specific past moment)",
+    options: ["had / finished", "has / finished", "was / finishing", "did / finish"],
+    answer: "had / finished",
+    explanation: "<strong>Past perfect</strong> — the preparations were done before Adi's call (earlier past action). <div class='rule-line'>By the time + past simple → past perfect for the earlier action.</div>"
+  },
+];
+
+// ── UTILS ────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function canSplitOptions(opts) { return opts.every(o => o.length <= 20); }
+function genCode() { return Math.random().toString(36).substr(2,4).toUpperCase(); }
+function $id(id) { return document.getElementById(id); }
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $id(id).classList.add('active');
+}
+
+// ── STATE ────────────────────────────────────────────────
+const TOTAL_Q = 10;
+const TIMER_SECS = 15;
+const TAG_CLASS = {
+  'Core modal':'tag-modal','Past substitute':'tag-sub','Future substitute':'tag-sub',
+  'Present perfect':'tag-pp','Past simple':'tag-ps','PP or PS?':'tag-pp'
+};
+
+let myId = 'p_' + Math.random().toString(36).substr(2,8);
+let myName = '';
+let roomCode = '';
+let isHost = false;
+let selectedMode = 'modals';
+let questions = [];
+let qIndex = 0;
+let myScore = 0;
+let myStreak = 0;
+let answered = false;
+let timerInterval = null;
+let timeLeft = TIMER_SECS;
+let roomRef = null;
+let listeners = {};
+
+// ── LOBBY ────────────────────────────────────────────────
+window.selectMode = function(el) {
+  document.querySelectorAll('.mode-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedMode = el.dataset.mode;
+};
+
+window.createRoom = async function() {
+  myName = $id('nameInput').value.trim();
+  if (!myName) { showError('Enter your name first.'); return; }
+  isHost = true;
+  roomCode = genCode();
+  const bank = getBank(selectedMode);
+  questions = shuffle(bank).slice(0, TOTAL_Q);
+  // Serialize questions (strip functions — store only needed fields)
+  const qData = questions.map(q => ({
+    tag: q.tag, sentence: q.sentence, hint: q.hint || '',
+    options: q.options, answer: q.answer, explanation: q.explanation
+  }));
+  roomRef = ref(db, 'rooms/' + roomCode);
+  await set(roomRef, {
+    host: myId,
+    mode: selectedMode,
+    status: 'waiting',
+    questions: qData,
+    players: { [myId]: { name: myName, score: 0, answered: false, answeredQ: -1 } }
+  });
+  // Remove player from room if they disconnect
+  onDisconnect(ref(db, `rooms/${roomCode}/players/${myId}`)).update({ disconnected: true, finished: true });
+  listenRoom();
+  $id('roomCodeDisplay').textContent = roomCode;
+  showScreen('waiting');
+};
+
+window.joinRoom = async function() {
+  myName = $id('nameInput').value.trim();
+  const code = $id('joinCodeInput').value.trim().toUpperCase();
+  if (!myName) { showError('Enter your name first.'); return; }
+  if (code.length !== 4) { showError('Enter a 4-letter room code.'); return; }
+  const snap = await get(ref(db, 'rooms/' + code));
+  if (!snap.exists()) { showError('Room not found.'); return; }
+  const room = snap.val();
+  if (room.status !== 'waiting') { showError('Game already in progress.'); return; }
+  isHost = false;
+  roomCode = code;
+  roomRef = ref(db, 'rooms/' + roomCode);
+  questions = room.questions;
+  await update(ref(db, `rooms/${roomCode}/players/${myId}`), { name: myName, score: 0, answered: false, answeredQ: -1 });
+  // Remove player from room if they disconnect
+  onDisconnect(ref(db, `rooms/${roomCode}/players/${myId}`)).update({ disconnected: true, finished: true });
+  listenRoom();
+  $id('roomCodeDisplay').textContent = roomCode;
+  showScreen('waiting');
+};
+
+window.leaveRoom = async function() {
+  cleanup();
+  if (roomRef) await remove(ref(db, `rooms/${roomCode}/players/${myId}`));
+  goLobby();
+};
+
+function showError(msg) { $id('lobbyError').textContent = msg; }
+
+function getBank(mode) {
+  if (mode === 'modals') return modalQuestions;
+  if (mode === 'tenses') return tensesQuestions;
+  return [...modalQuestions, ...tensesQuestions];
+}
+
+// ── ROOM LISTENER ────────────────────────────────────────
+function listenRoom() {
+  const rRef = ref(db, 'rooms/' + roomCode);
+  listeners.room = onValue(rRef, snap => {
+    if (!snap.exists()) { goLobby(); return; }
+    const room = snap.val();
+    const players = room.players || {};
+
+    // Update waiting room UI
+    if (room.status === 'waiting') {
+      renderPlayerList(players, room.host);
+      const count = Object.keys(players).length;
+      $id('waitingNote').textContent = count === 1 ? 'Waiting for players…' : `${count} players connected`;
+      if (isHost) {
+        $id('startBtn').style.display = count >= 1 ? 'block' : 'none';
+      }
+    }
+
+    // Host triggered countdown — fire on waiting OR if we somehow missed it
+    if (room.status === 'countdown' &&
+        ($id('waiting').classList.contains('active') || $id('lobby').classList.contains('active'))) {
+      questions = room.questions; // sync questions from host
+      startCountdown(room.countdownStart || Date.now());
+    }
+
+    // Game in progress
+    if (room.status === 'playing' && $id('countdown').classList.contains('active')) {
+      beginGame(room);
+    }
+
+    // Update live board during game
+    if (room.status === 'playing' && $id('game').classList.contains('active')) {
+      renderLiveBoard(players);
+    }
+
+    // Game over
+    if (room.status === 'finished' && !$id('podium').classList.contains('active')) {
+      showPodium(players);
+    }
+  });
+}
+
+function renderPlayerList(players, hostId) {
+  const list = $id('playerList');
+  list.innerHTML = '';
+  Object.entries(players).forEach(([pid, p]) => {
+    const div = document.createElement('div');
+    div.className = 'player-chip' + (pid === myId ? ' is-me' : '') + (pid === hostId ? ' is-host' : '');
+    div.innerHTML = `<span class="p-name">${p.name}</span><span class="p-badge">${pid === hostId ? 'HOST' : 'PLAYER'}</span>`;
+    list.appendChild(div);
+  });
+}
+
+function renderLiveBoard(players) {
+  const board = $id('liveBoard');
+  const sorted = Object.entries(players)
+    .filter(([,p]) => !p.disconnected)
+    .sort((a,b) => b[1].score - a[1].score);
+  board.innerHTML = '';
+  sorted.forEach(([pid, p]) => {
+    const hasAnswered = p.answeredQ === qIndex;
+    const chip = document.createElement('div');
+    chip.className = 'live-chip' + (pid === myId ? ' lc-me' : '') + (hasAnswered ? ' lc-answered' : '');
+    chip.innerHTML = `<span class="lc-name">${p.name}</span><span class="lc-score">${p.score}</span>`;
+    board.appendChild(chip);
+  });
+}
+
+// ── COUNTDOWN ────────────────────────────────────────────
+function startCountdown(startTime) {
+  showScreen('countdown');
+  // Sync to server timestamp so all devices count together
+  function tick() {
+    const elapsed = Date.now() - startTime;
+    const n = 3 - Math.floor(elapsed / 1000);
+    if (n <= 0) {
+      // Only host flips status to playing
+      if (isHost) update(roomRef, { status: 'playing', qIndex: 0 });
+      return;
+    }
+    const displayed = parseInt($id('countdownNum').textContent);
+    if (n !== displayed) {
+      $id('countdownNum').textContent = n;
+      $id('countdownNum').style.animation = 'none';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        $id('countdownNum').style.animation = 'countPop 1s ease-out';
+      }));
+    }
+    setTimeout(tick, 100); // poll at 100ms for accuracy
+  }
+  tick();
+}
+
+// ── HOST START ───────────────────────────────────────────
+window.hostStartGame = async function() {
+  await update(roomRef, { status: 'countdown', countdownStart: Date.now() });
+};
+
+// ── GAME ─────────────────────────────────────────────────
+function beginGame(room) {
+  qIndex = 0; myScore = 0; myStreak = 0; answered = false;
+  const modeLabels = { modals: 'MODALS', tenses: 'TENSES', mixed: '🔥 MIXED' };
+  $id('gameTitle').textContent = modeLabels[room.mode] || 'BLITZ';
+  showScreen('game');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered = false;
+  const q = questions[qIndex];
+  $id('qCounter').textContent = `Q ${qIndex + 1} / ${TOTAL_Q}`;
+  $id('progressBar').style.width = `${(qIndex / TOTAL_Q) * 100}%`;
+  $id('scoreVal').textContent = myScore;
+
+  const tagEl = $id('qTag');
+  tagEl.textContent = q.tag;
+  tagEl.className = 'q-tag ' + (TAG_CLASS[q.tag] || '');
+
+  $id('sentenceBox').innerHTML = q.sentence.replace('___', '<span class="gap" id="gapSpan">___</span>');
+  $id('hintText').textContent = q.hint || '';
+  $id('explanation').className = 'explanation';
+  $id('nextBtn').className = 'next-btn';
+
+  const grid = $id('optionsGrid');
+  grid.innerHTML = '';
+  const shuffled = shuffle(q.options);
+  grid.className = 'options-grid' + (canSplitOptions(shuffled) && shuffled.length === 4 ? ' can-split' : '');
+  shuffled.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = opt;
+    btn.onclick = () => selectAnswer(opt, btn, q);
+    grid.appendChild(btn);
+  });
+
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = TIMER_SECS;
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerUI();
+    if (timeLeft <= 0) { clearInterval(timerInterval); if (!answered) timeUp(); }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const circle = $id('timerCircle');
+  circle.style.strokeDashoffset = 100 * (1 - timeLeft / TIMER_SECS);
+  $id('timerText').textContent = timeLeft;
+  const r = timeLeft / TIMER_SECS;
+  circle.style.stroke = r > 0.5 ? 'var(--accent)' : r > 0.25 ? '#ffb347' : 'var(--wrong)';
+}
+
+function timeUp() {
+  answered = true; myStreak = 0;
+  const q = questions[qIndex];
+  document.querySelectorAll('.opt-btn').forEach(btn => {
+    btn.disabled = true;
+    const qAnsList = Array.isArray(q.answer) ? q.answer : [q.answer];
+    if (qAnsList.includes(btn.textContent)) btn.classList.add('correct-ans');
+  });
+  const gap = $id('gapSpan');
+  if (gap) { gap.textContent = Array.isArray(q.answer) ? q.answer[0] : q.answer; gap.className = 'gap wrong'; }
+  showExplanation(q);
+  showFlash('⏱ TIME!', true);
+  $id('nextBtn').className = 'next-btn show';
+  recordAnswer(false);
+}
+
+function selectAnswer(chosen, btn, q) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+
+  const qAnsList = Array.isArray(q.answer) ? q.answer : [q.answer];
+  const isCorrect = qAnsList.includes(chosen);
+
+  // Speed bonus: more points for faster answers
+  const speedBonus = Math.floor((timeLeft / TIMER_SECS) * 5);
+  const pts = isCorrect ? (10 + speedBonus) : 0;
+  myScore += pts;
+  myStreak = isCorrect ? myStreak + 1 : 0;
+
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = true;
+    if (qAnsList.includes(b.textContent)) b.classList.add('correct-ans');
+    else if (b === btn && !isCorrect) b.classList.add('wrong-ans');
+  });
+
+  const gap = $id('gapSpan');
+  if (gap) { gap.textContent = Array.isArray(q.answer) ? q.answer[0] : q.answer; gap.className = 'gap ' + (isCorrect ? 'correct' : 'wrong'); }
+
+  $id('scoreVal').textContent = myScore;
+  showFlash(isCorrect ? `+${pts} ✓` : '✗ WRONG', !isCorrect);
+  if (myStreak >= 3) showStreak(myStreak);
+  showExplanation(q);
+  $id('nextBtn').className = 'next-btn show';
+  recordAnswer(isCorrect, pts);
+}
+
+function recordAnswer(correct, pts = 0) {
+  // Write my score + answered flag to Firebase
+  update(ref(db, `rooms/${roomCode}/players/${myId}`), {
+    score: myScore,
+    answered: true,
+    answeredQ: qIndex
+  });
+}
+
+window.nextQuestion = function() {
+  qIndex++;
+  if (qIndex >= TOTAL_Q) {
+    clearInterval(timerInterval);
+    // Mark myself as finished — every player does this
+    update(ref(db, `rooms/${roomCode}/players/${myId}`), { finished: true, score: myScore });
+    // Every player independently checks if all are done — first one to confirm triggers end
+    checkAllFinished();
+  } else {
+    // Reset answered flag for next question
+    update(ref(db, `rooms/${roomCode}/players/${myId}`), { answered: false });
+    renderQuestion();
+  }
+};
+
+async function checkAllFinished() {
+  // Read once — if all finished, race to set status (Firebase last-write-wins, harmless)
+  const snap = await get(ref(db, `rooms/${roomCode}/players`));
+  if (!snap.exists()) return;
+  const players = snap.val();
+  const active = Object.values(players).filter(p => !p.disconnected);
+  if (active.length === 0) return;
+  const allDone = active.every(p => p.finished);
+  if (allDone) {
+    update(roomRef, { status: 'finished' });
+  }
+  // No polling — listenRoom handles status change for everyone
+}
+
+// ── PODIUM ───────────────────────────────────────────────
+function showPodium(players) {
+  cleanup();
+  const sorted = Object.entries(players)
+    .filter(([,p]) => !p.disconnected)
+    .map(([pid, p]) => ({ pid, name: p.name, score: p.score || 0 }))
+    .sort((a, b) => b.score - a.score);
+
+  const medals = ['🥇','🥈','🥉'];
+  const podiumWrap = $id('podiumWrap');
+  podiumWrap.innerHTML = '';
+
+  // Reorder for podium display: 2nd, 1st, 3rd
+  const podiumOrder = [sorted[1], sorted[0], sorted[2]].filter(Boolean);
+  const podiumPos = [2, 1, 3];
+  podiumOrder.forEach((p, i) => {
+    if (!p) return;
+    const block = document.createElement('div');
+    block.className = 'podium-block';
+    block.innerHTML = `
+      <div class="podium-name">${p.name}</div>
+      <div class="podium-score">${p.score} pts</div>
+      <div class="podium-bar">${medals[podiumPos[i]-1] || podiumPos[i]}</div>
+    `;
+    podiumWrap.appendChild(block);
+  });
+
+  const fullResults = $id('fullResults');
+  fullResults.innerHTML = '';
+  sorted.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'result-row' + (p.pid === myId ? ' rr-me' : '');
+    row.innerHTML = `<span class="rr-rank">${i+1}</span><span class="rr-name">${p.name}</span><span class="rr-score">${p.score}</span>`;
+    fullResults.appendChild(row);
+  });
+
+  const winner = sorted[0];
+  $id('podiumTitle').textContent = winner.pid === myId ? '🏆 YOU WIN!' : `🏆 ${winner.name} WINS!`;
+
+  showScreen('podium');
+}
+
+// ── PLAY AGAIN ───────────────────────────────────────────
+window.playAgain = async function() {
+  if (isHost) {
+    const bank = getBank(selectedMode);
+    questions = shuffle(bank).slice(0, TOTAL_Q);
+    const qData = questions.map(q => ({
+      tag: q.tag, sentence: q.sentence, hint: q.hint || '',
+      options: q.options, answer: q.answer, explanation: q.explanation
+    }));
+    // Reset all players
+    const snap = await get(ref(db, `rooms/${roomCode}/players`));
+    const players = snap.val() || {};
+    const resetPlayers = {};
+    Object.keys(players).forEach(pid => {
+      resetPlayers[pid] = { ...players[pid], score: 0, answered: false, answeredQ: -1, finished: false };
+    });
+    await update(roomRef, { status: 'waiting', questions: qData, players: resetPlayers });
+    $id('roomCodeDisplay').textContent = roomCode;
+    showScreen('waiting');
+  } else {
+    // Non-host goes back to waiting and resets themselves
+    await update(ref(db, `rooms/${roomCode}/players/${myId}`), { score: 0, answered: false, answeredQ: -1, finished: false });
+    $id('roomCodeDisplay').textContent = roomCode;
+    showScreen('waiting');
+  }
+};
+
+// ── CLEANUP ──────────────────────────────────────────────
+function cleanup() {
+  clearInterval(timerInterval);
+  if (listeners.room) { off(ref(db, 'rooms/' + roomCode)); listeners.room = null; }
+}
+
+window.goLobby = function() {
+  cleanup();
+  roomCode = ''; isHost = false; roomRef = null;
+  showScreen('lobby');
+};
+
+// ── UI HELPERS ───────────────────────────────────────────
+function showExplanation(q) {
+  const el = $id('explanation');
+  el.innerHTML = q.explanation;
+  el.className = 'explanation show';
+}
+
+function showFlash(msg, wrong) {
+  const el = $id('feedbackFlash');
+  el.textContent = msg;
+  el.className = 'feedback-flash' + (wrong ? ' wrong' : '') + ' show';
+  setTimeout(() => { el.className = 'feedback-flash' + (wrong ? ' wrong' : ''); }, 1100);
+}
+
+function showStreak(n) {
+  const el = $id('streakBadge');
+  el.textContent = `🔥 ${n} IN A ROW!`;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 1800);
+}
+
+</script>
+</body>
+</html>
